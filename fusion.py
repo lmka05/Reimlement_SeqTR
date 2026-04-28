@@ -55,7 +55,7 @@ class SimpleFusion(nn.Module):
         # C2: [256, 160, 160] → [256, 80, 80]
         # Conv 3x3 stride 2 = giảm resolution 2 lần + học features mới
         self.down_c2 = nn.Sequential(
-            nn.Conv2d(c2_ch, c2_ch, kernel_size=3, stride=2, padding=1, bias=False),
+            nn.Conv2d(in_channels = c2_ch, out_channels = c2_ch, kernel_size=3, stride=2, padding=1, bias=False),
             nn.BatchNorm2d(c2_ch),
             nn.ReLU(inplace=True),
         )
