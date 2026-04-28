@@ -84,6 +84,10 @@ class EMA:
         with torch.no_grad():
             for name, param in model.state_dict().items():
                 if name in self.shadow:
+                    # Skip non-float tensors (e.g. BatchNorm's num_batches_tracked là Long)
+                    if not param.is_floating_point():
+                        self.shadow[name].copy_(param)
+                        continue
                     # shadow = decay * shadow + (1-decay) * param
                     self.shadow[name].mul_(decay).add_(param, alpha=1 - decay)
         self.step_count += 1
