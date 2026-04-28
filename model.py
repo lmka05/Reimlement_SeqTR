@@ -70,7 +70,7 @@ class SeqTRDet(nn.Module):
 
         # 3. Fusion — kết hợp visual + language
         self.fusion = SimpleFusion(
-            vis_channels=[256, 512, 1024]  # Channels từ ResNet layer1, 2, 3
+            vis_channels=[512, 1024, 2048]  # Channels từ ResNet layer2, 3, 4
         )
 
         # 4. Sequence Head — Transformer auto-regressive decoder

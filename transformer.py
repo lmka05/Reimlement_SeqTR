@@ -49,14 +49,6 @@ import torch.nn.functional as F
 class SinePositionalEncoding2D(nn.Module):
     """
     Positional Encoding 2D dạng Sine/Cosine cho feature map ảnh.
-
-    Transformer không có khái niệm "vị trí" — nó xử lý tất cả tokens như nhau.
-    Positional encoding thêm thông tin vị trí (x, y) vào mỗi pixel của feature map.
-
-    Dùng hàm sin/cos ở các tần số khác nhau (giống DETR, "Attention Is All You Need"):
-        PE(pos, 2i)   = sin(pos / 10000^(2i/d_model))
-        PE(pos, 2i+1) = cos(pos / 10000^(2i/d_model))
-
     Output: [B, d_model, H, W] — mỗi pixel có 1 vector positional encoding.
     """
 
