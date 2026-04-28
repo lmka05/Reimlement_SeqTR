@@ -399,7 +399,7 @@ def collate_fn(batch):
 
 def build_dataloader(dataset, batch_size, shuffle=True, num_workers=2):
     """
-    Tạo DataLoader từ dataset.
+    Tạo DataLoader từ dataset.  
 
     Args:
         dataset: RefCOCODataset instance
