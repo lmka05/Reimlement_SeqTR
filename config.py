@@ -17,8 +17,8 @@ class Config:
     # 1. ĐƯỜNG DẪN DỮ LIỆU
     # ==========================================================================
     # Khi chạy LOCAL (máy cá nhân) — sửa lại cho đúng thư mục của bạn:
-    img_dir = "./data/images/mscoco/train2014"
-    ann_file = "./data/annotations/refcoco-unc/instances.json"
+    img_dir = "/kaggle/input/datasets/jeffaudi/coco-2014-dataset-for-yolov3/coco2014/images/train2014"
+    ann_file = "/kaggle/input/datasets/minhkhoai/seqtr-annotations-weights/annotations/refcoco-unc/instances.json"
 
     # Khi chạy trên KAGGLE — uncomment 2 dòng dưới, comment 2 dòng trên:
     # img_dir = "/kaggle/input/coco-train2014/train2014"
