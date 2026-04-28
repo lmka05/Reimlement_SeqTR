@@ -20,8 +20,8 @@ class Config:
 
     dim_feedforward = 1024 
 
-    encoder_layers = 6
-    decoder_layers = 3
+    enc_layers = 6
+    dec_layers = 3
 
     dropout = 0.1
 
