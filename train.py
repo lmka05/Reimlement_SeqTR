@@ -246,6 +246,8 @@ def main():
         print("Downloading GloVe (lần đầu sẽ mất ~5 phút, sau đó dùng cache)...")
         glove_model = api.load("glove-wiki-gigaword-300")
         glove_matrix = build_glove_matrix(token2idx, glove_model, config.glove_dim)
+        del glove_model  # Giải phóng ~2GB RAM
+        import gc; gc.collect()
     except ImportError:
         print("⚠️ gensim chưa cài. Dùng random embeddings (kết quả sẽ kém hơn).")
         print("   Cài gensim: pip install gensim")
