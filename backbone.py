@@ -7,7 +7,7 @@ class VisualEncoder(nn.Module):
     Visual Encoder dùng ResNet-50 pretrained
     """
 
-    def __init__(self, free_layers = True):
+    def __init__(self, freeze_layers = True):
         super().__init__()
 
         # Tải ResNet-50 pretrained
@@ -31,7 +31,7 @@ class VisualEncoder(nn.Module):
         # và cũng không dùng avgpool + fc (phần classification gốc)
 
         # Đóng băng layer0 và 1
-        if free_layers:
+        if freeze_layers:
             for layer in [self.layer0, self.layer1]:
                 for param in layer.parameters():
                     param.requires_grad = False
