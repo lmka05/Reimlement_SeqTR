@@ -39,21 +39,6 @@ from evaluate import evaluate
 # PHẦN 1: TIỆN ÍCH
 # ==============================================================================
 
-def unwrap_model(model):
-    """Lấy model gốc khi đang bọc DataParallel."""
-    return model.module if isinstance(model, nn.DataParallel) else model
-
-
-def load_model_state(model, state_dict):
-    """Load checkpoint linh hoạt giữa single GPU và DataParallel."""
-    target_model = unwrap_model(model)
-    if any(key.startswith('module.') for key in state_dict.keys()):
-        state_dict = {
-            key.removeprefix('module.'): value
-            for key, value in state_dict.items()
-        }
-    target_model.load_state_dict(state_dict)
-
 def set_seed(seed):
     """
     Đặt random seed cho reproducibility.
@@ -149,7 +134,7 @@ def save_checkpoint(model, ema, optimizer, scheduler, epoch, accuracy, best_accu
 
     checkpoint = {
         'epoch': epoch,
-        'model_state_dict': unwrap_model(model).state_dict(),
+        'model_state_dict': model.state_dict(),
         'optimizer_state_dict': optimizer.state_dict(),
         'scheduler_state_dict': scheduler.state_dict(),
         'accuracy': accuracy,
@@ -203,8 +188,6 @@ def train_one_epoch(model, dataloader, optimizer, device, epoch, config, ema=Non
 
         # Forward: tính loss
         loss = model(imgs, ref_inds, img_metas, gt_bbox=gt_bboxes)
-        if loss.dim() > 0:
-            loss = loss.mean()
 
         # Backward: tính gradient
         optimizer.zero_grad()
@@ -219,7 +202,7 @@ def train_one_epoch(model, dataloader, optimizer, device, epoch, config, ema=Non
 
         # Update EMA
         if ema is not None:
-            ema.update(unwrap_model(model))
+            ema.update(model)
 
         # Tracking
         total_loss += loss.item()
@@ -249,9 +232,6 @@ def main():
     set_seed(config.seed)
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(f"Device: {device}")
-    num_gpus = torch.cuda.device_count()
-    if num_gpus > 1:
-        print(f"Using {num_gpus} GPUs with DataParallel")
 
     # 1. Build vocabulary
     print("\n" + "=" * 60)
@@ -303,12 +283,9 @@ def main():
     print("STEP 4: Building model")
     print("=" * 60)
     model = SeqTRDet(config, glove_matrix).to(device)
-    if num_gpus > 1:
-        model = nn.DataParallel(model)
 
-    base_model = unwrap_model(model)
-    total_params = sum(p.numel() for p in base_model.parameters())
-    train_params = sum(p.numel() for p in base_model.parameters() if p.requires_grad)
+    total_params = sum(p.numel() for p in model.parameters())
+    train_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
     print(f"Total params:     {total_params:,}")
     print(f"Trainable params: {train_params:,}")
 
@@ -324,7 +301,7 @@ def main():
     scheduler = build_scheduler(optimizer, config)
 
     # 6. EMA
-    ema = EMA(unwrap_model(model), decay=config.ema_decay) if config.ema else None
+    ema = EMA(model, decay=config.ema_decay) if config.ema else None
 
     # 7. Resume from checkpoint (nếu có)
     start_epoch = 0
@@ -333,7 +310,7 @@ def main():
     if os.path.exists(latest_ckpt):
         print(f"\nResuming from {latest_ckpt}")
         ckpt = torch.load(latest_ckpt, map_location=device, weights_only=False)
-        load_model_state(model, ckpt['model_state_dict'])
+        model.load_state_dict(ckpt['model_state_dict'])
         optimizer.load_state_dict(ckpt['optimizer_state_dict'])
         scheduler.load_state_dict(ckpt['scheduler_state_dict'])
         start_epoch = ckpt['epoch'] + 1
@@ -360,9 +337,9 @@ def main():
 
         if ema is not None:
             # Evaluate với EMA weights (thường tốt hơn)
-            ema.apply(unwrap_model(model))
+            ema.apply(model)
             val_acc, val_iou = evaluate(model, val_loader, device, desc="val (EMA)")
-            ema.restore(unwrap_model(model))
+            ema.restore(model)
         else:
             val_acc, val_iou = evaluate(model, val_loader, device, desc="val")
 
