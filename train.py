@@ -29,10 +29,9 @@ from torch.optim.lr_scheduler import LambdaLR
 
 # Import các module của project
 from config import Config
-from dataset import (
-    build_vocab, build_glove_matrix, RefCOCODataset, build_dataloader
-)
-from model import SeqTRDet
+from utils.vocab import build_vocab, build_glove_matrix
+from datasets.dataset import RefCOCODataset, build_dataloader
+from models.model import SeqTRDet
 from evaluate import evaluate
 
 

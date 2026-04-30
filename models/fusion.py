@@ -1,31 +1,3 @@
-# ==============================================================================
-# fusion.py — Multi-modal Fusion
-# ==============================================================================
-# Kết hợp visual features (từ backbone) và language features (từ GRU)
-# thành 1 feature map duy nhất chứa thông tin CẢ ảnh lẫn câu mô tả.
-#
-# Quy trình 2 bước:
-#
-# BƯỚC 1: Bottom-up FPN (Feature Pyramid Network)
-#   Merge 3 feature maps (C3, C4, C5) thành 1 feature map duy nhất.
-#
-#   C3 [512, 80, 80]  ──downsample──→ [512, 40, 40]
-#                                         ↓ concat
-#   C4 [1024, 40, 40] ─────────────→ [1536, 40, 40] ──downsample──→ [1536, 20, 20]
-#                                                                        ↓ concat
-#   C5 [2048, 20, 20] ────────────────────────────────────────→ [3584, 20, 20]
-#                                                                        ↓ project
-#                                                                    [1024, 20, 20]
-#
-# BƯỚC 2: Element-wise Fusion
-#   visual_feature * language_feature (nhân element-wise qua tanh)
-#   → feature map chứa thông tin cả ảnh + câu mô tả
-#
-#   x_vis: [B, 1024, 20, 20]  (visual)
-#   y:     [B, 1, 1024]       (language) → broadcast → [B, 1024, 20, 20]
-#   output = tanh(x_vis) * tanh(y)    → [B, 1024, 20, 20]
-# ==============================================================================
-
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -53,17 +25,13 @@ class SimpleFusion(nn.Module):
 
         c3_ch, c4_ch, c5_ch = vis_channels  # 512, 1024, 2048
 
-        # --- Bước 1a: Downsample C3 → cùng resolution với C4 ---
-        # C3: [512, 80, 80] → [512, 40, 40]
         self.down_c3 = nn.Sequential(
-            nn.Conv2d(c3_ch, c3_ch, kernel_size=3, stride=2, padding=1, bias=False),
+            nn.Conv2d(in_channels = c3_ch, out_channels = c3_ch, kernel_size=3, stride=2, padding=1, bias=False),
             nn.BatchNorm2d(c3_ch),
             nn.ReLU(inplace=True),
         )
 
-        # --- Bước 1b: Merge C3_down + C4 → downsample → cùng resolution với C5 ---
-        # Concat: [512, 40, 40] + [1024, 40, 40] = [1536, 40, 40]
-        # Downsample: [1536, 40, 40] → [1536, 20, 20]
+
         mid_ch = c3_ch + c4_ch  # 512 + 1024 = 1536
         self.down_mid = nn.Sequential(
             nn.Conv2d(mid_ch, mid_ch, kernel_size=3, stride=2, padding=1, bias=False),
@@ -71,9 +39,7 @@ class SimpleFusion(nn.Module):
             nn.ReLU(inplace=True),
         )
 
-        # --- Bước 1c: Merge mid_down + C5 → project về 1024 channels ---
-        # Concat: [1536, 20, 20] + [2048, 20, 20] = [3584, 20, 20]
-        # Project: [3584, 20, 20] → [1024, 20, 20]
+
         merged_ch = mid_ch + c5_ch  # 1536 + 2048 = 3584
         out_ch = 1024
         self.project = nn.Sequential(
@@ -100,7 +66,6 @@ class SimpleFusion(nn.Module):
         """
         c3, c4, c5 = vis_feats
 
-        # ---- BƯỚC 1: Bottom-up FPN — merge 3 scales thành 1 ----
 
         # Downsample C3: [B, 512, 80, 80] → [B, 512, 40, 40]
         c3_down = self.down_c3(c3)
@@ -119,7 +84,7 @@ class SimpleFusion(nn.Module):
         # Project: [B, 3584, 20, 20] → [B, 1024, 20, 20]
         x_vis = self.project(merged)
 
-        # ---- BƯỚC 2: Element-wise Fusion (visual × language) ----
+        # Element-wise Fusion (visual × language) 
 
         y = lang_feat.squeeze(1).unsqueeze(-1).unsqueeze(-1)  # [B, 1024, 1, 1]
 

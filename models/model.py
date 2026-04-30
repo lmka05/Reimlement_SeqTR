@@ -30,10 +30,10 @@
 import torch
 import torch.nn as nn
 
-from backbone import VisualEncoder
-from language import LanguageEncoder
-from fusion import SimpleFusion
-from transformer import SeqHead
+from .backbone import VisualEncoder
+from .language import LanguageEncoder
+from .fusion import SimpleFusion
+from .transformer import SeqHead
 
 
 class SeqTRDet(nn.Module):

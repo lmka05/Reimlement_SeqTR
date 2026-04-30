@@ -50,6 +50,7 @@ class SinePositionalEncoding2D(nn.Module):
     """
     Positional Encoding 2D dạng Sine/Cosine cho feature map ảnh.
     Output: [B, d_model, H, W] — mỗi pixel có 1 vector positional encoding.
+    Sẽ được cộng vào các features map trước khi được flatten
     """
 
     def __init__(self, num_feature, temperature=10000, normalize=True):

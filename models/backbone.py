@@ -1,24 +1,3 @@
-# ==============================================================================
-# backbone.py — Visual Encoder (ResNet-50)
-# ==============================================================================
-# Trích xuất đặc trưng hình ảnh (visual features) từ ảnh đầu vào.
-#
-# Repo gốc dùng DarkNet-53, nhưng cần tải weights riêng + code parse phức tạp.
-# Chúng ta dùng ResNet-50 từ torchvision — pretrained sẵn, không cần setup gì.
-#
-# ResNet-50 gồm nhiều "layer", mỗi layer giảm resolution và tăng channels:
-#   Input:  [B, 3, 640, 640]
-#   layer0: [B, 64, 160, 160]   (conv1 + bn + relu + maxpool)
-#   layer1: [B, 256, 160, 160]  (3 bottleneck blocks)
-#   layer2: [B, 512, 80, 80]   (4 bottleneck blocks)
-#   layer3: [B, 1024, 40, 40]  (6 bottleneck blocks)
-#   layer4: [B, 2048, 20, 20]  (3 bottleneck blocks)
-#
-# Chúng ta lấy output từ 3 tầng: layer2, layer3, layer4
-# để feature map cuối = 20x20 (400 tokens), khớp với DarkNet gốc.
-# (Trước đó dùng layer1/2/3 → 40x40 = 1600 tokens → OOM!)
-# ==============================================================================
-
 import torch
 import torch.nn as nn
 import torchvision.models as models
