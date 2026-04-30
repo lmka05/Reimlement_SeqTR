@@ -30,8 +30,8 @@ class Config:
     vocab_size = 1001 # thêm 1 token cho End token
 
     # Tham số cho training
-    batch_size = 8
-    lr = 3.125e-5
+    batch_size = 16
+    lr = 6.25e-5
     epochs = 60
     warmup_epochs = 5 # Trong 5 epoch đầu, lr tăng từ 0 lên lr giúp model ổn định giai đoạn đầu
     decay_epoch = 50 # Epoch mà lr sẽ giảm (nhân với ratio)
