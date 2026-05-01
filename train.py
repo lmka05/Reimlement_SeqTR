@@ -132,9 +132,12 @@ def save_checkpoint(model, ema, optimizer, scheduler, epoch, accuracy, best_accu
     """Lưu checkpoint."""
     os.makedirs(config.work_dir, exist_ok=True)
 
+    # Nếu model được wrap bởi DataParallel, lấy model gốc bên trong
+    raw_model = model.module if hasattr(model, 'module') else model
+
     checkpoint = {
         'epoch': epoch,
-        'model_state_dict': model.state_dict(),
+        'model_state_dict': raw_model.state_dict(),
         'optimizer_state_dict': optimizer.state_dict(),
         'scheduler_state_dict': scheduler.state_dict(),
         'accuracy': accuracy,
@@ -188,6 +191,10 @@ def train_one_epoch(model, dataloader, optimizer, device, epoch, config, ema=Non
 
         # Forward: tính loss
         loss = model(imgs, ref_inds, img_metas, gt_bbox=gt_bboxes)
+
+        # DataParallel trả về loss từ mỗi GPU → cần mean lại
+        if loss.dim() > 0:
+            loss = loss.mean()
 
         # Backward: tính gradient
         optimizer.zero_grad()
@@ -289,7 +296,7 @@ def main():
     print(f"Total params:     {total_params:,}")
     print(f"Trainable params: {train_params:,}")
 
-    # 5. Optimizer + Scheduler
+    # 5. Optimizer + Scheduler (tạo TRƯỚC khi wrap DataParallel)
     optimizer = Adam(
         filter(lambda p: p.requires_grad, model.parameters()),
         lr=config.lr,
@@ -300,8 +307,16 @@ def main():
     )
     scheduler = build_scheduler(optimizer, config)
 
-    # 6. EMA
+    # 6. EMA (dùng model gốc, không phải DataParallel)
     ema = EMA(model, decay=config.ema_decay) if config.ema else None
+
+    # 6.5 Multi-GPU: wrap model bằng DataParallel nếu có >= 2 GPU
+    num_gpus = torch.cuda.device_count()
+    if num_gpus > 1:
+        print(f"\n🚀 Using {num_gpus} GPUs with DataParallel!")
+        model = nn.DataParallel(model)
+    else:
+        print(f"\nUsing 1 GPU")
 
     # 7. Resume from checkpoint (nếu có)
     start_epoch = 0
@@ -310,7 +325,9 @@ def main():
     if os.path.exists(latest_ckpt):
         print(f"\nResuming from {latest_ckpt}")
         ckpt = torch.load(latest_ckpt, map_location=device, weights_only=False)
-        model.load_state_dict(ckpt['model_state_dict'])
+        # Load vào model gốc (bên trong DataParallel nếu có)
+        raw_model = model.module if hasattr(model, 'module') else model
+        raw_model.load_state_dict(ckpt['model_state_dict'])
         optimizer.load_state_dict(ckpt['optimizer_state_dict'])
         scheduler.load_state_dict(ckpt['scheduler_state_dict'])
         start_epoch = ckpt['epoch'] + 1
