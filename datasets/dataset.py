@@ -242,32 +242,26 @@ def collate_fn(batch):
 
     DataLoader mặc định chỉ gom được tensors cùng shape.
     img_meta là dict nên cần xử lý riêng.
-
-    Args:
-        batch (list): List các tuples (img, ref_inds, gt_bbox, img_meta)
-                      từ __getitem__, với len = batch_size
-
-    Returns:
-        imgs (Tensor): [B, 3, H, W] — batch ảnh đã stack
-        ref_inds (Tensor): [B, max_token] — batch câu đã stack
-        gt_bboxes (Tensor): [B, 4] — batch bboxes đã stack
-        img_metas (list[dict]): List các img_meta dict
     """
-    # zip(*batch) "unzip" list of tuples thành separate lists
-    # batch = [(img1, ref1, bb1, meta1), (img2, ref2, bb2, meta2), ...]
-    # → imgs = (img1, img2, ...), refs = (ref1, ref2, ...), ...
     imgs, ref_inds, gt_bboxes, img_metas = zip(*batch)
 
-    # torch.stack gom list tensors thành 1 tensor với batch dimension
-    # [img1, img2, ...] → [B, 3, H, W]
     imgs = torch.stack(imgs, dim=0)
     ref_inds = torch.stack(ref_inds, dim=0)
     gt_bboxes = torch.stack(gt_bboxes, dim=0)
 
-    # img_metas giữ nguyên dạng list of dicts
-    img_metas = list(img_metas)
+    # [CŨ] img_metas giữ nguyên dạng list of dicts
+    # img_metas = list(img_metas)
+    # return imgs, ref_inds, gt_bboxes, img_metas
 
-    return imgs, ref_inds, gt_bboxes, img_metas
+    # [MỚI] Chuyển img_metas → tensor [B, 4] để DataParallel chia được
+    # Mỗi dòng = [pad_h, pad_w, img_h, img_w]
+    img_shapes = torch.tensor([
+        [m['pad_shape'][0], m['pad_shape'][1],
+         m['img_shape'][0], m['img_shape'][1]]
+        for m in img_metas
+    ], dtype=torch.float32)
+
+    return imgs, ref_inds, gt_bboxes, img_shapes
 
 def build_dataloader(dataset, batch_size, shuffle=True, num_workers=2):
     """

@@ -86,28 +86,39 @@ class SeqTRDet(nn.Module):
             label_smoothing=config.label_smoothing, # 0.1
         )
 
-    def forward(self, img, ref_inds, img_metas, gt_bbox=None):
+    def forward(self, img, ref_inds, img_shapes, gt_bbox=None):
         """
         Forward pass — tự động switch giữa train/test dựa vào gt_bbox.
 
         Args:
             img (Tensor): [B, 3, 640, 640] — batch ảnh
             ref_inds (Tensor): [B, max_token] — batch câu đã tokenize
-            img_metas (list[dict]): Metadata cho mỗi ảnh
+            # [CŨ] img_metas (list[dict]): Metadata cho mỗi ảnh
+            img_shapes (Tensor): [B, 4] — [pad_h, pad_w, img_h, img_w] (tensor để DataParallel chia được)
             gt_bbox (Tensor | None): [B, 4] — GT bbox (None khi inference)
 
         Returns:
             Training: loss (Tensor scalar)
             Inference: pred_bbox (Tensor [B, 4])
         """
+        # [MỚI] Tạo lại img_metas (list of dicts) từ tensor img_shapes
+        # Vì transformer.py vẫn cần format dict
+        B = img.shape[0]
+        img_metas = []
+        for i in range(B):
+            img_metas.append({
+                'pad_shape': (int(img_shapes[i, 0]), int(img_shapes[i, 1]), 3),
+                'img_shape': (int(img_shapes[i, 2]), int(img_shapes[i, 3]), 3),
+            })
+
         # Bước 1: Trích xuất visual features — 3 feature maps
-        vis_feats = self.vis_enc(img)  # [C2, C3, C4]
+        vis_feats = self.vis_enc(img)  # [C3, C4, C5]
 
         # Bước 2: Mã hóa câu mô tả → 1 vector
         lang_feat = self.lan_enc(ref_inds)  # [B, 1, 1024]
 
         # Bước 3: Kết hợp visual + language
-        x_fused = self.fusion(vis_feats, lang_feat)  # [B, 1024, 40, 40]
+        x_fused = self.fusion(vis_feats, lang_feat)  # [B, 1024, 20, 20]
 
         # Bước 4: Sinh tọa độ bbox
         if gt_bbox is not None:

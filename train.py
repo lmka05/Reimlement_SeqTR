@@ -183,14 +183,16 @@ def train_one_epoch(model, dataloader, optimizer, device, epoch, config, ema=Non
 
     start_time = time.time()
 
-    for batch_idx, (imgs, ref_inds, gt_bboxes, img_metas) in enumerate(dataloader):
+    for batch_idx, (imgs, ref_inds, gt_bboxes, img_shapes) in enumerate(dataloader):
         # Chuyển dữ liệu sang GPU
         imgs = imgs.to(device)
         ref_inds = ref_inds.to(device)
         gt_bboxes = gt_bboxes.to(device)
+        img_shapes = img_shapes.to(device)  # [MỚI] img_shapes là tensor, cần chuyển sang GPU
 
         # Forward: tính loss
-        loss = model(imgs, ref_inds, img_metas, gt_bbox=gt_bboxes)
+        # [CŨ] loss = model(imgs, ref_inds, img_metas, gt_bbox=gt_bboxes)
+        loss = model(imgs, ref_inds, img_shapes, gt_bbox=gt_bboxes)
 
         # DataParallel trả về loss từ mỗi GPU → cần mean lại
         if loss.dim() > 0:

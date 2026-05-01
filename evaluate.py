@@ -73,13 +73,15 @@ def evaluate(model, dataloader, device, desc="Evaluating"):
     total_samples = 0
     total_iou = 0.0
 
-    for batch_idx, (imgs, ref_inds, gt_bboxes, img_metas) in enumerate(dataloader):
+    for batch_idx, (imgs, ref_inds, gt_bboxes, img_shapes) in enumerate(dataloader):
         imgs = imgs.to(device)
         ref_inds = ref_inds.to(device)
         gt_bboxes = gt_bboxes.to(device)
+        img_shapes = img_shapes.to(device)  # [MỚI]
 
         # Forward inference (không truyền gt_bbox → model trả về predicted bbox)
-        pred_bboxes = model(imgs, ref_inds, img_metas, gt_bbox=None)
+        # [CŨ] pred_bboxes = model(imgs, ref_inds, img_metas, gt_bbox=None)
+        pred_bboxes = model(imgs, ref_inds, img_shapes, gt_bbox=None)
 
         # Tính IoU
         iou = compute_iou_batch(pred_bboxes, gt_bboxes)  # [B]
