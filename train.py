@@ -209,9 +209,11 @@ def train_one_epoch(model, dataloader, optimizer, device, epoch, config, ema=Non
         # Update weights
         optimizer.step()
 
-        # Update EMA
+        # Update EMA (dùng model gốc, không phải DataParallel)
         if ema is not None:
-            ema.update(model)
+            # [CŨ] ema.update(model)
+            raw_model = model.module if hasattr(model, 'module') else model
+            ema.update(raw_model)
 
         # Tracking
         total_loss += loss.item()
@@ -356,9 +358,11 @@ def main():
 
         if ema is not None:
             # Evaluate với EMA weights (thường tốt hơn)
-            ema.apply(model)
+            # [CŨ] ema.apply(model) / ema.restore(model)
+            raw_model = model.module if hasattr(model, 'module') else model
+            ema.apply(raw_model)
             val_acc, val_iou = evaluate(model, val_loader, device, desc="val (EMA)")
-            ema.restore(model)
+            ema.restore(raw_model)
         else:
             val_acc, val_iou = evaluate(model, val_loader, device, desc="val")
 
