@@ -1,10 +1,3 @@
-# ==============================================================================
-# test.py — Đánh giá model trên val / testA / testB từ checkpoint
-# ==============================================================================
-# Chạy:
-#   python test.py --checkpoint work_dir/best.pth --splits val testA testB
-# ==============================================================================
-
 import os
 import sys
 import argparse

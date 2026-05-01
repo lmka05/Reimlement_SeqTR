@@ -1,102 +1,63 @@
-import torch
+import torch 
 import torch.nn as nn
 import torch.nn.functional as F
 
-
 class SimpleFusion(nn.Module):
     """
-    Multi-modal Fusion: kết hợp visual + language features.
+    Kết hợp vis_feature(C3,C4,C5) + lang_feature
+    Input :
+        vis_feature: list[tensor] có 3 tensor (c3,c4,c5) với shape (B,C,H,W) khác nhau C3[B,512,80,80] C4[B,1024,40,40] C5[B,2048,20,20]
+        lang_feature: tensor có shape (B,1,1024) được lấy từ last layerGRU
 
-    Input:
-        vis_feats: list [C3, C4, C5] từ backbone
-        lang_feat: [B, 1, 1024] từ language encoder
-
-    Output:
-        x_fused: [B, 1024, 20, 20] — feature map đã kết hợp cả ảnh + câu
+    Output :
+        Tensor có shape (B,1024,H,W) đã được nhân hàm tanh với lang_feature
     """
-
-    def __init__(self, vis_channels=[512, 1024, 2048]):
-        """
-        Args:
-            vis_channels: Số channels của mỗi feature map từ backbone.
-                ResNet-50: [512, 1024, 2048] (layer2, layer3, layer4)
-        """
+    def __init__(self, vis_channels = [512,1024,2048]):
         super().__init__()
+        c3_ch, c4_ch, c5_ch = vis_channels
 
-        c3_ch, c4_ch, c5_ch = vis_channels  # 512, 1024, 2048
-
+        # chuyển c3 từ 80*80 -> 40 * 40, giữ nguyên channel
         self.down_c3 = nn.Sequential(
-            nn.Conv2d(in_channels = c3_ch, out_channels = c3_ch, kernel_size=3, stride=2, padding=1, bias=False),
+            nn.Conv2d(in_channels=c3_ch, out_channels=c3_ch, kernel_size=3,stride=2,padding =1, bias = False),
             nn.BatchNorm2d(c3_ch),
-            nn.ReLU(inplace=True),
+            nn.ReLU(inplace=True)
         )
-
-
-        mid_ch = c3_ch + c4_ch  # 512 + 1024 = 1536
+        
+        # concat c3 và c4 lại sau đó chuyển xuống c4 từ 40*40 -> 20*20
+        mid_ch = c3_ch + c4_ch # 512 + 1024 = 1536
         self.down_mid = nn.Sequential(
-            nn.Conv2d(mid_ch, mid_ch, kernel_size=3, stride=2, padding=1, bias=False),
+            nn.Conv2d(in_channels=mid_ch, out_channels=mid_ch, kernel_size=3, stride=2, padding=1, bias=False),
             nn.BatchNorm2d(mid_ch),
-            nn.ReLU(inplace=True),
+            nn.ReLU(inplace = True)
         )
 
-
-        merged_ch = mid_ch + c5_ch  # 1536 + 2048 = 3584
+        # sau bước down_c4 thì feature sẽ có shape [B, 1536, 20,20]
+        # ta sẽ con cat với c5 thì sẽ có shape [B, 1536+2048, 20, 20]
+        # chúng ta sẽ project về thành [B,1024,20,20]
+        merged_ch = mid_ch + c5_ch # 1536 + 2048 = 3584
         out_ch = 1024
         self.project = nn.Sequential(
-            nn.Conv2d(merged_ch, out_ch, kernel_size=3, stride=1, padding=1, bias=False),
+            nn.Conv2d(in_channels=merged_ch, out_channels= out_ch, kernel_size =3, stride =1, padding=1, bias = False),
             nn.BatchNorm2d(out_ch),
             nn.ReLU(inplace=True),
-            nn.Conv2d(out_ch, out_ch, kernel_size=1, bias=False),
+            nn.Conv2d(in_channels=out_ch,out_channels=out_ch,kernel_size=1, bias= False),
             nn.BatchNorm2d(out_ch),
-            nn.ReLU(inplace=True),
+            nn.ReLU(inplace=True)
         )
-
     def forward(self, vis_feats, lang_feat):
-        """
-        Args:
-            vis_feats (list[Tensor]): 3 feature maps từ backbone
-                - C3: [B, 512, 80, 80]
-                - C4: [B, 1024, 40, 40]
-                - C5: [B, 2048, 20, 20]
-
-            lang_feat (Tensor): [B, 1, 1024] — vector ngôn ngữ
-
-        Returns:
-            x_fused (Tensor): [B, 1024, 20, 20] — visual-language fused features
-        """
-        c3, c4, c5 = vis_feats
-
-
-        # Downsample C3: [B, 512, 80, 80] → [B, 512, 40, 40]
+        c3,c4,c5 = vis_feats
         c3_down = self.down_c3(c3)
-
-        # Concat C3_down + C4
-        # [B, 512, 40, 40] cat [B, 1024, 40, 40] → [B, 1536, 40, 40]
-        mid = torch.cat([c3_down, c4], dim=1)
-
-        # Downsample mid: [B, 1536, 40, 40] → [B, 1536, 20, 20]
+        mid = torch.cat([c3_down,c4], dim =1)
         mid_down = self.down_mid(mid)
+        merged = torch.cat([mid_down,c5],dim=1)
+        x_vis = self.project(merged) # ta đã có visual feature, shape [B,1024,20,20]
 
-        # Concat mid_down + C5 → project
-        # [B, 1536, 20, 20] cat [B, 2048, 20, 20] → [B, 3584, 20, 20]
-        merged = torch.cat([mid_down, c5], dim=1)
+        # lange_feat có shape [B,1,1024], muốn nhân được thì ta phải chuyển nó thành shape [B,1024,1,1]
+        y = lang_feat.squeeze(1).unsqueeze(-1).unsqueeze(-1)
 
-        # Project: [B, 3584, 20, 20] → [B, 1024, 20, 20]
-        x_vis = self.project(merged)
-
-        # Element-wise Fusion (visual × language) 
-
-        y = lang_feat.squeeze(1).unsqueeze(-1).unsqueeze(-1)  # [B, 1024, 1, 1]
-
-        # tanh gating: ngôn ngữ quyết định vùng nào của ảnh được "bật/tắt"
-        x_fused = torch.tanh(x_vis) * torch.tanh(y)  # [B, 1024, 20, 20]
-
+        x_fused = torch.tanh(x_vis)*torch.tanh(y)
+        
         return x_fused
-
-
-# ==============================================================================
-# TEST
-# ==============================================================================
 
 if __name__ == "__main__":
     print("=== Test SimpleFusion ===")
