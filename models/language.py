@@ -5,10 +5,10 @@ class LanguageEncoder(nn.Module):
     def __init__(self, glove_vectors, hidden_size = 512):
         super().__init__()
         self.hidden_size = hidden_size
-        vocab_size, embed_dim = glove_vector.shape
+        vocab_size, embed_dim = glove_vectors.shape
 
         self.embedding = nn.Embedding.from_pretrained(
-            glove_vector,
+            glove_vectors,
             padding_idx=0,
             freeze = True # Không train glove
 
