@@ -340,19 +340,22 @@ class SeqHead(nn.Module):
         x = self.input_proj(x_fused)  # [B, 256, H, W]
         _, _, H, W = x.shape
 
-        # Tạo mask cho padding regions
-        # Tất cả ảnh đã pad về 640x640, nhưng phần pad là vô nghĩa
-        # Tạo mask: True ở vùng pad, False ở vùng ảnh thật
+        # Tạo mask cho padding regions — trực tiếp ở kích thước feature map
+        # (Tiết kiệm memory: tạo [B, H, W] thay vì [B, 640, 640] rồi resize)
+        # True ở vùng pad, False ở vùng ảnh thật
         input_h = img_metas[0]['pad_shape'][0]  # 640
         input_w = img_metas[0]['pad_shape'][1]  # 640
-        x_mask = x_fused.new_ones((B, input_h, input_w))  # [B, 640, 640] toàn 1
+        x_mask = x_fused.new_ones((B, H, W))  # [B, H, W] toàn 1
 
         for i in range(B):
             img_h, img_w, _ = img_metas[i]['img_shape']
-            x_mask[i, :img_h, :img_w] = 0  # Vùng ảnh thật = 0
+            # Scale img_shape xuống feature map size
+            feat_h = int(round(img_h * H / input_h))
+            feat_w = int(round(img_w * W / input_w))
+            feat_h = min(feat_h, H)
+            feat_w = min(feat_w, W)
+            x_mask[i, :feat_h, :feat_w] = 0  # Vùng ảnh thật = 0
 
-        # Resize mask về cùng spatial size với feature map
-        x_mask = F.interpolate(x_mask.unsqueeze(1), size=(H, W)).squeeze(1)  # [B, H, W]
         x_mask = x_mask.bool()
 
         # Positional encoding 2D

@@ -20,6 +20,7 @@ import copy
 import time
 import json
 import random
+import gc
 import numpy as np
 
 import torch
@@ -100,6 +101,8 @@ class EMA:
     def restore(self, model):
         """Khôi phục weights gốc của model (sau khi evaluate xong)."""
         model.load_state_dict(self.backup, strict=True)
+        del self.backup  # Giải phóng bản backup khỏi GPU memory
+        self.backup = None
 
 
 def build_scheduler(optimizer, config):
@@ -285,7 +288,7 @@ def main():
         train_dataset, config.batch_size, shuffle=True, num_workers=config.num_workers
     )
     val_loader = build_dataloader(
-        val_dataset, batch_size=config.batch_size * 2,
+        val_dataset, batch_size=config.batch_size,  # Dùng cùng batch_size với train để tránh OOM
         shuffle=False, num_workers=config.num_workers
     )
 
@@ -376,13 +379,20 @@ def main():
         # Step scheduler
         scheduler.step()
 
+        # Giải phóng bộ nhớ GPU sau mỗi epoch (tránh OOM tích lũy)
+        gc.collect()
+        torch.cuda.empty_cache()
+
         # Epoch summary
         epoch_time = time.time() - epoch_start
         lr = optimizer.param_groups[0]['lr']
+        mem_alloc = torch.cuda.memory_allocated() / 1024**2
+        mem_reserved = torch.cuda.memory_reserved() / 1024**2
         print(f"\n{'='*60}")
         print(f"Epoch {epoch+1}/{config.epochs} Summary:")
         print(f"  Loss: {avg_loss:.4f} | Val Acc: {val_acc:.2f}% | "
               f"Best: {best_accuracy:.2f}% | LR: {lr:.6f} | Time: {epoch_time:.0f}s")
+        print(f"  GPU Memory: {mem_alloc:.0f}MB allocated / {mem_reserved:.0f}MB reserved")
         print(f"{'='*60}\n")
 
     print(f"\n🎉 Training finished! Best accuracy: {best_accuracy:.2f}%")

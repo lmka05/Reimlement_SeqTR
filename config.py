@@ -52,8 +52,9 @@ class Config:
     log_interval = 80
     # Random seed: Đảm bảo kết quả reproducible (chạy lại ra cùng kết quả).
     seed = 6666
-    # Số workers cho DataLoader. Kaggle nên dùng 2, local có thể dùng 4.
-    num_workers = 2
+    # Số workers cho DataLoader. Kaggle nên dùng 0 để tránh memory leak qua nhiều epoch.
+    # [CŨ] num_workers = 2
+    num_workers = 0
     # Thư mục lưu checkpoint & log.
     work_dir = "/kaggle/working/checkpoints"
 
