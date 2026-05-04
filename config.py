@@ -32,7 +32,7 @@ class Config:
     # Tham số cho training
     batch_size = 16
     lr = 6.25e-5
-    epochs = 30
+    epochs = 60
     warmup_epochs = 5 # Trong 5 epoch đầu, lr tăng từ 0 lên lr giúp model ổn định giai đoạn đầu
     decay_epoch = 50 # Epoch mà lr sẽ giảm (nhân với ratio)
     decay_ratio = 0.1
