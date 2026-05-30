@@ -54,11 +54,11 @@ class Config:
     seed = 6666
     # Số workers cho DataLoader. Kaggle nên dùng 0 để tránh memory leak qua nhiều epoch.
     # [CŨ] num_workers = 2
-    num_workers = 0
+    num_workers = 2
     # Thư mục lưu checkpoint & log.
     work_dir = "/kaggle/working/checkpoints"
 
 
-
+    
 
 
