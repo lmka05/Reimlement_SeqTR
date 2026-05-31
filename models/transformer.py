@@ -200,7 +200,7 @@ class SeqHead(nn.Module):
 
     def __init__(self, in_ch=1024, d_model=256, nhead=8, dim_feedforward=1024,
                  dropout=0.1, enc_layers=6, dec_layers=3,
-                 num_bin=1000, label_smoothing=0.1):
+                 num_bin=1000, label_smoothing=0.1, token_weights=None):
         """
         Args:
             in_ch (int): Input channels từ fusion (1024)
@@ -288,7 +288,14 @@ class SeqHead(nn.Module):
 
         # --- 7. Loss ---
         # Cross-Entropy Loss với label smoothing
-        self.loss_fn = nn.CrossEntropyLoss(label_smoothing=label_smoothing)
+        self.loss_fn = nn.CrossEntropyLoss(label_smoothing=label_smoothing, reduction='none')
+
+        # Per-token weights cho ablation study: [x1, y1, x2, y2, END]
+        if token_weights is not None:
+            self.register_buffer('token_weights',
+                torch.tensor(token_weights, dtype=torch.float32))
+        else:
+            self.token_weights = None
 
         # Khởi tạo weights
         self._reset_parameters()
@@ -444,10 +451,18 @@ class SeqHead(nn.Module):
 
         # 9. Compute loss
         # Reshape cho CrossEntropyLoss: logits [B*5, 1001], targets [B*5]
-        loss = self.loss_fn(
+        per_token_loss = self.loss_fn(
             logits.reshape(-1, self.vocab_size),  # [B*5, 1001]
             targets.reshape(-1)                    # [B*5]
-        )
+        )  # [B*5] — loss cho từng token
+
+        # Áp dụng per-token weights nếu có (ablation study)
+        if self.token_weights is not None:
+            # Repeat weights cho batch: [w1,w2,w3,w4,w5, w1,w2,w3,w4,w5, ...]
+            weights = self.token_weights.repeat(B)  # [B*5]
+            per_token_loss = per_token_loss * weights
+
+        loss = per_token_loss.mean()
 
         return loss
 

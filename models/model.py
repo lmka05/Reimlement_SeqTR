@@ -66,6 +66,7 @@ class SeqTRDet(nn.Module):
         self.lan_enc = LanguageEncoder(
             glove_vectors=glove_vectors,
             hidden_size=config.gru_hidden,  # 512 → output 1024
+            pooling=config.pooling,         # "max" | "mean" | "last" (ablation)
         )
 
         # 3. Fusion — kết hợp visual + language
@@ -84,6 +85,7 @@ class SeqTRDet(nn.Module):
             dec_layers=config.dec_layers,          # 3
             num_bin=config.num_bin,                 # 1000
             label_smoothing=config.label_smoothing, # 0.1
+            token_weights=config.token_weights,      # Per-token weights (ablation)
         )
 
     def forward(self, img, ref_inds, img_shapes, gt_bbox=None):

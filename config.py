@@ -47,6 +47,19 @@ class Config:
     # Giúp model tránh over-confident và generalize tốt hơn.
     label_smoothing = 0.1
 
+    # ABLATION STUDY - Language Pooling
+    # Cách tổng hợp output của BiGRU thành 1 vector:
+    #   "max"  — Max pooling (mặc định, tốt nhất theo paper)
+    #   "mean" — Mean pooling (trung bình các hidden states)
+    #   "last" — Final hidden state (nối forward + backward)
+    pooling = "max"
+
+    # ABLATION STUDY - Token Weights
+    # Trọng số cho mỗi token trong sequence [x1, y1, x2, y2, END]
+    # None = đều (1.0 cho tất cả)
+    # Ví dụ: [1.5, 1.0, 1.0, 1.0, 1.0] = x1 nặng hơn (theo paper gốc)
+    token_weights = None
+
     # 6. LOGGING & CHECKPOINT
     # In log mỗi N batches.
     log_interval = 80
