@@ -1,19 +1,9 @@
-# ==============================================================================
-# run_ablation.py — Ablation Study Runner cho SeqTR Detection
-# ==============================================================================
+
 # Script này tự động chạy các thí nghiệm ablation study:
 #   A. Language Feature Pooling: max / mean / last
 #   B. Token Weight: uniform / x1-heavy / x1y1-heavy / decreasing
 #
 # Mỗi experiment train N epoch → evaluate trên val set → lưu kết quả.
-#
-# Cách chạy:
-#   python run_ablation.py                    # Chạy tất cả experiments
-#   python run_ablation.py --exp A            # Chỉ chạy nhóm A (pooling)
-#   python run_ablation.py --exp B            # Chỉ chạy nhóm B (token weight)
-#   python run_ablation.py --exp A2           # Chỉ chạy experiment A2
-#   python run_ablation.py --epochs 10        # Override số epoch
-# ==============================================================================
 
 import os
 import sys
@@ -118,9 +108,7 @@ def get_experiments(exp_filter=None):
     return {k: v for k, v in ABLATION_CONFIGS.items() if k.startswith(exp_filter)}
 
 
-# ==============================================================================
 # CHẠY 1 EXPERIMENT
-# ==============================================================================
 
 def run_experiment(exp_id, exp_config, config, glove_matrix, token2idx,
                    num_epochs=5, device=None):
@@ -271,10 +259,7 @@ def run_experiment(exp_id, exp_config, config, glove_matrix, token2idx,
     return result
 
 
-# ==============================================================================
 # MAIN
-# ==============================================================================
-
 def main():
     parser = argparse.ArgumentParser(description="SeqTR Ablation Study")
     parser.add_argument("--exp", type=str, default=None,

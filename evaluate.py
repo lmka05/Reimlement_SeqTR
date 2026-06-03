@@ -4,9 +4,6 @@
 # Tính metric Accuracy@IoU>=0.5:
 #   Với mỗi sample, nếu IoU giữa predicted bbox và ground truth bbox >= 0.5
 #   → đúng (correct). Accuracy = số đúng / tổng số samples.
-#
-# Đây là metric chuẩn của bài toán Referring Expression Comprehension (REC).
-# ==============================================================================
 
 import torch
 from torch.utils.data import DataLoader
@@ -102,9 +99,7 @@ def evaluate(model, dataloader, device, desc="Evaluating"):
     return accuracy, avg_iou
 
 
-# ==============================================================================
 # TEST
-# ==============================================================================
 
 if __name__ == "__main__":
     print("=== Test evaluate functions ===")

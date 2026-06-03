@@ -1,5 +1,5 @@
 # ==============================================================================
-# train.py — Training Loop cho SeqTR Detection
+# train.py — Training Loop 
 # ==============================================================================
 # File này là ENTRY POINT chính — chạy file này để huấn luyện model.
 #
@@ -10,9 +10,6 @@
 #   4. Training loop: forward → loss → backward → update
 #   5. Mỗi epoch: evaluate trên val set → save checkpoint
 #
-# Chạy:
-#   python train.py
-# ==============================================================================
 
 import os
 import sys
@@ -36,9 +33,7 @@ from models.model import SeqTRDet
 from evaluate import evaluate
 
 
-# ==============================================================================
 # PHẦN 1: TIỆN ÍCH
-# ==============================================================================
 
 def set_seed(seed):
     """
@@ -160,9 +155,7 @@ def save_checkpoint(model, ema, optimizer, scheduler, epoch, accuracy, best_accu
         print(f"  ★ New best model saved! Acc: {accuracy:.2f}%")
 
 
-# ==============================================================================
 # PHẦN 2: TRAINING LOOP
-# ==============================================================================
 
 def train_one_epoch(model, dataloader, optimizer, device, epoch, config, ema=None):
     """
@@ -234,9 +227,7 @@ def train_one_epoch(model, dataloader, optimizer, device, epoch, config, ema=Non
     return avg_loss
 
 
-# ==============================================================================
 # PHẦN 3: MAIN
-# ==============================================================================
 
 def main():
     """Entry point chính cho training."""

@@ -12,23 +12,6 @@
 #       - Hiển thị câu referring expression làm tiêu đề
 #       - Hiển thị giá trị IoU
 #   4. Ghép tất cả thành 1 figure grid và lưu file PNG
-#
-# Cách chạy:
-#   cd seqtr_reimpl
-#   python visualize_qualitative.py --checkpoint work_dir/best.pth
-#
-# Tùy chọn đầy đủ:
-#   python visualize_qualitative.py \
-#       --checkpoint work_dir/best.pth \
-#       --split testA \
-#       --num-samples 4 \
-#       --seed 42 \
-#       --output qualitative_results.png
-#
-# Style (giống paper TransVG):
-#   🔵 Xanh dương (Blue)  = Predicted bounding box
-#   🔴 Đỏ (Red)           = Ground truth bounding box
-# ==============================================================================
 
 import os
 import sys
@@ -62,9 +45,7 @@ from utils import build_vocab, build_glove_matrix
 from evaluate import compute_iou_batch
 
 
-# ==============================================================================
 # PHẦN 1: HÀM VẼ BOUNDING BOX
-# ==============================================================================
 
 def draw_bbox_on_axes(ax, bbox, color, linewidth=3, label=None):
     """
@@ -110,9 +91,7 @@ def draw_bbox_on_axes(ax, bbox, color, linewidth=3, label=None):
     ax.add_patch(rect)
 
 
-# ==============================================================================
 # PHẦN 2: LOAD MODEL TỪ CHECKPOINT
-# ==============================================================================
 
 def load_model(checkpoint_path, config, device):
     """
@@ -182,9 +161,7 @@ def load_model(checkpoint_path, config, device):
     return model, token2idx, idx2token
 
 
-# ==============================================================================
 # PHẦN 3: INFERENCE 1 SAMPLE
-# ==============================================================================
 
 def inference_single(model, dataset, index, device):
     """
@@ -269,9 +246,7 @@ def inference_single(model, dataset, index, device):
     return result
 
 
-# ==============================================================================
 # PHẦN 4: LOAD ẢNH GỐC VÀ RESIZE (KHÔNG PAD)
-# ==============================================================================
 
 def load_display_image(image_id, img_dir, img_size):
     """
@@ -311,9 +286,7 @@ def load_display_image(image_id, img_dir, img_size):
     return img_resized
 
 
-# ==============================================================================
 # PHẦN 5: TẠO FIGURE GRID (HÀM CHÍNH VẼ KẾT QUẢ)
-# ==============================================================================
 
 def create_qualitative_figure(results, img_dir, img_size, output_path,
                                ncols=4, figscale=5):
@@ -464,9 +437,7 @@ def create_qualitative_figure(results, img_dir, img_size, output_path,
     print(f"\n💾 Đã lưu figure: {output_path}")
 
 
-# ==============================================================================
 # PHẦN 6: HÀM TIỆN ÍCH — CLIP BBOX
-# ==============================================================================
 
 def clip_bbox(bbox, img_shape):
     """
@@ -498,9 +469,7 @@ def clip_bbox(bbox, img_shape):
     return clipped
 
 
-# ==============================================================================
 # PHẦN 7: LƯU TỪNG ẢNH RIÊNG LẺ
-# ==============================================================================
 
 def save_individual_images(results, img_dir, img_size, output_dir):
     """
@@ -552,9 +521,7 @@ def save_individual_images(results, img_dir, img_size, output_dir):
     print(f"💾 Đã lưu {len(results)} ảnh riêng lẻ vào: {output_dir}/")
 
 
-# ==============================================================================
-# PHẦN 8: HÀM MAIN — ĐIỂM BẮT ĐẦU CHƯƠNG TRÌNH
-# ==============================================================================
+# PHẦN 8: HÀM MAIN 
 
 def main():
     """
@@ -707,9 +674,7 @@ Ví dụ:
     print("=" * 60)
 
 
-# ==============================================================================
 # ENTRY POINT
-# ==============================================================================
 
 if __name__ == "__main__":
     main()

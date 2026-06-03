@@ -58,7 +58,7 @@ class Config:
     # Trọng số cho mỗi token trong sequence [x1, y1, x2, y2, END]
     # None = đều (1.0 cho tất cả)
     # Ví dụ: [1.5, 1.0, 1.0, 1.0, 1.0] = x1 nặng hơn (theo paper gốc)
-    token_weights = None
+    token_weights = [2.0, 1.5, 1.0, 1.0, 0.5 ]
 
     # 6. LOGGING & CHECKPOINT
     # In log mỗi N batches.
@@ -66,7 +66,6 @@ class Config:
     # Random seed: Đảm bảo kết quả reproducible (chạy lại ra cùng kết quả).
     seed = 6666
     # Số workers cho DataLoader. Kaggle nên dùng 0 để tránh memory leak qua nhiều epoch.
-    # [CŨ] num_workers = 2
     num_workers = 2
     # Thư mục lưu checkpoint & log.
     work_dir = "/kaggle/working/checkpoints"

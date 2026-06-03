@@ -42,9 +42,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
-# ==============================================================================
 # PHẦN 1: POSITIONAL ENCODING
-# ==============================================================================
 
 class SinePositionalEncoding2D(nn.Module):
     """
@@ -113,9 +111,8 @@ class SinePositionalEncoding2D(nn.Module):
         return pos
 
 
-# ==============================================================================
 # PHẦN 2: QUANTIZE / DEQUANTIZE
-# ==============================================================================
+
 
 def quantize_bbox(bbox, img_meta, num_bin=1000):
     """
@@ -186,9 +183,7 @@ def dequantize_bbox(tokens, img_meta, num_bin=1000):
     return bbox
 
 
-# ==============================================================================
 # PHẦN 3: SEQUENCE HEAD
-# ==============================================================================
 
 class SeqHead(nn.Module):
     """
@@ -534,9 +529,7 @@ class SeqHead(nn.Module):
         return pred_bbox
 
 
-# ==============================================================================
 # TEST
-# ==============================================================================
 
 if __name__ == "__main__":
     print("=== Test SeqHead ===")
