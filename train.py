@@ -1,7 +1,5 @@
 # ==============================================================================
 # train.py — Training Loop 
-# ==============================================================================
-# File này là ENTRY POINT chính — chạy file này để huấn luyện model.
 #
 # Luồng:
 #   1. Build vocab + GloVe matrix
